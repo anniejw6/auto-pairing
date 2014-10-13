@@ -1,0 +1,169 @@
+---
+title: "Round Pairing"
+author: "ajw"
+output:
+  html_document:
+    css: markdown7.css
+---
+
+# Set-up
+Set the round that you are pairing.
+```{r setup}
+round <- 4
+amta <- F
+coinTie <- 'heads'
+coinR3  <- 'heads'
+```
+
+This runs the backing functions, which can be found [here](https://github.com/anniejw6/amta-analytics/blob/master/auto-pairing/pair_func.R).
+```{r functions,warning = F, message = F}
+source('pair_func.R')
+```
+
+Read in data from google sheets.
+```{r read data}
+teams <- 'https://docs.google.com/spreadsheets/d/1REb82IzLPC3S7n93CntfAaqBETdSCDXoO6DKS9VV0ro/pubhtml?gid=0&single=true'
+df   <- 'https://docs.google.com/spreadsheets/d/1REb82IzLPC3S7n93CntfAaqBETdSCDXoO6DKS9VV0ro/pubhtml?gid=2080568749&single=true'
+
+teams <- readSpreadsheet(teams)
+df <- cleanTab(readSpreadsheet(df))
+tab <- tabSumm(df, amta = amta)
+tab$rank <- rankMT(dat = tab, 
+                   crit1 = 'crit1', crit2 = 'crit2', crit3 = 'crit3', 
+                   r = round, coinflip = coinTie)
+```
+
+`teams` lists out past pairings, which are used to check impermissibles.
+```{r teams, echo = F, results='asis'}
+printTab(head(teams))
+```
+
+`tab` shows the values on which we pair.
+```{r tab, echo = F, results='asis'}
+printTab(head(tab))
+```
+
+# Defining Impermissibles
+We store a list of impermissible match-ups, which are 
+defined either as teams from the same school or teams that have previously faced one another.
+Here's a sample of that list.
+```{r impermissibles, echo = F, results='asis'}
+impermiss <- rbind(sameSchool(teams),
+                   pastOpp(df, round))
+printTab(head(impermiss))
+```
+
+# Pairing
+
+Now we pair the teams. If the round is side-constrained, we rank and pair by sides. Otherwise, we take all the teams togther.
+```{r pairing}
+pair <- tab
+
+#if round is side-constrained:
+if(round %in% c(2,4)){
+  
+  #rank sides separately
+  pair$side <- ifelse(tab$side == 'P', 'D', 'P')  
+  pair <- ddply(pair, .(side), mutate, rank = rank(rank))
+  
+  #pair highest versus highest
+  pair <- pair[order(pair$rank, pair$side), ]
+  
+} else {
+  
+  #rank teams together
+  pair <- pair[order(pair$rank), ]
+  
+  #pair 1 vs 2, 3 vs 4, etc
+  if(coinR3 == 'heads'){
+    pair$side <- rep(c('P', 'D'))
+  } else {
+    pair$side <- rep(c('D', 'P'))
+  }
+
+
+}
+
+pair$trial <- rep(1:(nrow(pair)/2), each = 2)
+```
+
+Here's the pairings, which may or may not include impermissibles.
+```{r show-pairing, echo = F, results='asis'}
+printTab(pairPretty(pair, amta = amta))
+```
+
+# Finding and Resolving Impermissibles
+
+We loop through each row and see whether 
+the matchup is in the list of impermissibles we created earlier.
+```{r find-impermiss, echo = T, results='asis'}
+# Find impermissibles
+pair$impermiss <- findImpermiss(pair, impermiss)
+
+# Set value to store swaps
+swaps <- data.frame(Team1 = NA, Team2 = NA, final = NA)
+```
+
+And then we actually try to resolve them.
+```{r solve-impermiss, results = 'asis'}
+# If there are no impermissibles,
+if(sum(pair$impermiss) == 0){
+  
+  writeLines('No impermissibles!')
+  
+} else {
+  
+  pair$newRank <- pair$rank
+  
+  # resolve impermissibles
+  while (sum(pair$impermiss) > 0){
+  
+    # Print pairings at start
+    writeLines('Current List of Pairings')
+    printTab(addColor(pairPretty(pair, amta = amta)))
+    
+    # set trial_x = highest trial with impermissible
+    trial_x <- pair[pair$trial == pair$trial[min(which(pair$impermiss == T))], ]
+    
+    # Compare swap distances based on WPB, PB, and PD
+    possSwaps <- compareDist(x = trial_x, all = pair, round = round, amta = F)  
+    
+    repeat{
+      
+      # Set proposed_swap = minimum distance swap
+      proposedSwap <- possSwaps[1, ]
+      
+      # proposed Swap
+      writeLines('Proposed Swap')
+      printTab(proposedSwap)
+      
+      # If it's allowed
+      
+      if(!paste(swapList(newSwap = proposedSwap, oldSwap = trial_x), collapse = '') 
+         %in% swaps$final){
+        break # Move on
+      }
+      
+      # If it's not allowed, remove proposed_swap from possible
+      writeLines('Proposed swap is not possible!')
+      possSwaps <- possSwaps[-1, ]
+    }
+    
+    #  make proposed_swap
+    pair <- makeSwap(newSwap = proposedSwap, old = trial_x, dat = pair)
+    
+    #  insert proposed_swap in SWAP
+    swaps <- insertSwap(newSwap = proposedSwap, oldSwap = trial_x, dat = swaps)
+    
+    #  set n = number of impermissibles
+    pair$impermiss <- findImpermiss(pair, impermiss)
+    }
+  }
+```
+
+# Final Pairings
+
+Here are final pairings, which are resolved for impermissibles.
+```{r final, echo = F, results = 'asis'}
+printTab(addColor(pairPretty(pair, amta = amta)))
+```
