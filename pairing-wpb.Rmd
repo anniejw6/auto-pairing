@@ -145,7 +145,7 @@ if(sum(pair$impermiss) == 0){
       }
       
       # If it's not allowed, remove proposed_swap from possible
-      writeLines('Proposed swap is not possible!')
+      writeLines('Proposed swap is not possible!\n')
       possSwaps <- possSwaps[-1, ]
     }
     

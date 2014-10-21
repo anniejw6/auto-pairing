@@ -9,7 +9,7 @@ output:
 # Set-up
 Set the round that you are pairing.
 ```{r setup}
-round <- 3
+round <- 4
 amta <- T
 coinTie <- 'heads'
 coinR3  <- 'heads'
@@ -145,7 +145,7 @@ if(sum(pair$impermiss) == 0){
       }
       
       # If it's not allowed, remove proposed_swap from possible
-      writeLines('Proposed swap is not possible!')
+      writeLines('Proposed swap is not possible!\n')
       possSwaps <- possSwaps[-1, ]
     }
     
