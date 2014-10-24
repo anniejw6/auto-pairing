@@ -58,7 +58,7 @@ cleanTab <- function(dat, amta){
     
   }
 
-tabSumm <- function(df, amta){
+tabSumm <- function(df, amta, round){
   if(amta == F){
     
     tab <- data.frame(
@@ -163,13 +163,13 @@ pairPretty <- function(dat = pair, amta = amta, impermiss = T){
 }
 
 # rank teams by WPB, PB, PD, coin-flip
-rankMT <- function(dat = tab, crit1 = 'crit1', crit2 = 'crit2', crit3 = 'crit3', r = round, coinflip = 'heads'){
+rankMT <- function(dat = tab, crit1 = 'crit1', crit2 = 'crit2', crit3 = 'crit3', r = round, coinflip = 'Heads'){
   
-  if(coinflip == 'heads'){
-    coinflip <- rank(tab$team)
+  if(coinflip == 'Heads'){
+    coinflip <- rank(dat$team)
     print('In case of ties, larger team number gets higher rank.')
   }else {
-    coinflip <- -rank(tab$team)
+    coinflip <- -rank(dat$team)
     print('In case of ties, lower team number gets higher rank.')
   }
   

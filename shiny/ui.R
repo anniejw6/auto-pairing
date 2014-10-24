@@ -50,10 +50,6 @@ shinyUI(fluidPage(
       
       numericInput("obs", "Number of observations to view:", 3),
       
-      helpText("Note: while the data view will show only the specified",
-               "number of observations, the summary will still be based",
-               "on the full dataset."),
-      
       submitButton("Generate Pairings")
     ),
     
