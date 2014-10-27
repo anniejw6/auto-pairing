@@ -4,6 +4,7 @@ library(plyr)
 library(reshape)
 library(knitr)
 library(xtable)
+library(RCurl)
 
 # Prints pretty things
 printTab <- function(x){
@@ -266,7 +267,7 @@ findImpermiss <- function(dat = pair, impermissibles = impermiss){
   
   for(i in 1:nrow(dat)){
     
-    proposedPair <- paste(pair$team[pair$trial == pair$trial[i]], collapse = '')
+    proposedPair <- paste(dat$team[dat$trial == dat$trial[i]], collapse = '')
       
     if(proposedPair %in% notOkay){
       res[i] <- T
@@ -316,10 +317,10 @@ swapList <- function(newSwap = proposedSwap, oldSwap = trial_x){
   
   if(newSwap$cat == 'Keep P, Swap D'){
     neW <- c(team1 = newSwap$d,
-                      team2 = trial_x$team[trial_x$side == 'D'])
+                      team2 = oldSwap$team[oldSwap$side == 'D'])
   } else {
     neW <- c(team1 = newSwap$p,
-                      team2 = trial_x$team[trial_x$side == 'P'])
+                      team2 = oldSwap$team[oldSwap$side == 'P'])
   }
   return(neW)
 }
@@ -327,7 +328,7 @@ swapList <- function(newSwap = proposedSwap, oldSwap = trial_x){
 # Insert Swaps
 insertSwap <- function(newSwap = proposedSwap, oldSwap = trial_x, dat = swaps){
 
-  x <- swapList(newSwap = proposedSwap, oldSwap = trial_x)
+  x <- swapList(newSwap = newSwap, oldSwap = oldSwap)
   # Create out combinations
   news <- data.frame(Team1 = x,
                      Team2 = rev(x),

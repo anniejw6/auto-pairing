@@ -44,13 +44,7 @@ shinyUI(fluidPage(
       helpText("Note: This only needs to be performed before Round 3.",
                style = "font-size: 8pt"),
       
-      selectInput("dataset", "Choose a dataset:", 
-                  choices = c("rock", "pressure", "cars"),
-                  selected = "cars"),
-      
-      numericInput("obs", "Number of observations to view:", 3),
-      
-      submitButton("Generate Pairings")
+      actionButton("submit", "Pair")
     ),
     
     # Show a summary of the dataset and an HTML table with the
@@ -59,10 +53,14 @@ shinyUI(fluidPage(
     # section.
     mainPanel(
       h4("Summary"),
-      verbatimTextOutput("summary"),
+      #verbatimTextOutput("summary"),
+      htmlOutput("summary"),
       
       h4("Observations"),
-      htmlOutput("view")
+      htmlOutput("view"),
+      
+      h4("Final"),
+      htmlOutput("final")
     )
   )
 ))
